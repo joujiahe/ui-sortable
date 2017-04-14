@@ -1,6 +1,6 @@
 /**
  * angular-ui-sortable - This directive allows you to jQueryUI Sortable.
- * @version v0.14.3 - 2016-06-30
+ * @version v0.14.3 - 2017-04-15
  * @link http://angular-ui.github.com
  * @license MIT
  */
@@ -30,10 +30,11 @@ angular.module('ui.sortable', [])
         },
         link: function(scope, element, attrs, ngModel) {
           var savedNodes;
+          var helper;
 
           function combineCallbacks(first, second){
-            var firstIsFunc = first && (typeof first === 'function');
-            var secondIsFunc = second && (typeof second === 'function');
+            var firstIsFunc = typeof first === 'function';
+            var secondIsFunc = typeof second === 'function';
             if(firstIsFunc && secondIsFunc) {
               return function() {
                 first.apply(this, arguments);
@@ -71,12 +72,8 @@ angular.module('ui.sortable', [])
             }
 
             // patch the options that need to have values set
-            if (!value) {
-              if (key === 'items') {
-                value = uiSortableConfig.items;
-              } else if (key === 'ui-model-items') {
-                value = uiSortableConfig.items;
-              }
+            if (!value && (key === 'items' || key === 'ui-model-items')) {
+              value = uiSortableConfig.items;
             }
 
             return value;
@@ -188,8 +185,7 @@ angular.module('ui.sortable', [])
             if (hasSortingHelper(element, ui) &&
                 element.sortable( 'option', 'appendTo' ) === 'parent') {
               // The .ui-sortable-helper element (that's the default class name)
-              // is placed last.
-              result = savedNodes.last();
+              result = helper;
             }
             return result;
           }
@@ -306,6 +302,7 @@ angular.module('ui.sortable', [])
               // This is inside activate (instead of start) in order to save
               // both lists when dragging between connected lists.
               savedNodes = element.contents();
+              helper = ui.helper;
 
               // If this list has a placeholder (the connected lists won't),
               // don't inlcude it in saved nodes.
@@ -407,9 +404,10 @@ angular.module('ui.sortable', [])
                 }
               }
 
-              // It's now safe to clear the savedNodes
+              // It's now safe to clear the savedNodes and helper
               // since stop is the last callback.
               savedNodes = null;
+              helper = null;
             };
 
             callbacks.receive = function(e, ui) {
